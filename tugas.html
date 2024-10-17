@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Panen</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<style>
+    
+    body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #555;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 60%;
+            margin: 0 auto;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        thead {
+            background-color: #f8f8f8;
+            font-weight: bold;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #dataTable {
+            margin-top: 20px;
+        }
+
+        #chartContainer {
+            width: 50%;
+            margin: 0 auto;
+            margin-bottom: 20px;
+        }
+
+        th {
+            cursor: pointer;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+            display: inline-block;
+        }
+
+        .sort-icon.asc::after {
+            content: "▲"; /* Ikon untuk ascending */
+        }
+
+        .sort-icon.desc::after {
+            content: "▼"; /* Ikon untuk descending */
+        }
+
+</style>
+<body>
+    <h1>Data Panen</h1>
+    <center>
+        <h2>GHIFFARI RIZQI SAPUTRA - 2021081038</h2>
+    </center>
+
+    <div id="chartContainer">
+        <canvas id="panenChart"></canvas>
+    </div>
+
+    <div align="center">
+        <label for="filterTahun">Filter Tahun:</label>
+        <select id="filterTahun" onchange="filterData()">
+            <option value="all">Semua</option>
+        </select>
+
+        <label for="filterJenis">Filter Jenis:</label>
+        <select id="filterJenis" onchange="filterData()">
+            <option value="all">Semua</option>
+        </select>
+
+        <label for="filterHasil">Filter Hasil:</label>
+        <select id="filterHasil" onchange="filterData()">
+            <option value="all">Semua</option>
+        </select>
+
+        <button onclick="showAllData(dataPanen)">Tampilkan Semua Data</button>
+    </div>
+
+    <div align="center">
+        <label for="viewOption">Tampilkan Kolom:</label>
+        <select id="viewOption" onchange="updateTableView()">
+            <option value="all">Semua</option>
+            <option value="tahun">Tahun</option>
+            <option value="jenis">Jenis</option>
+            <option value="hasil">Hasil</option>
+        </select>
+    </div>
+
+    <div id="dataTable"></div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        var dataPanen = [
+            {"tahun":"2000","jenis":"padi","hasil":"20"},
+            {"tahun":"2001","jenis":"padi","hasil":"40"},
+            {"tahun":"2002","jenis":"padi","hasil":"60"},
+            {"tahun":"2003","jenis":"padi","hasil":"50"},
+            {"tahun":"2004","jenis":"padi","hasil":"30"},
+            {"tahun":"2005","jenis":"padi","hasil":"40"},
+            {"tahun":"2006","jenis":"padi","hasil":"40"},
+            {"tahun":"2007","jenis":"padi","hasil":"50"},
+            {"tahun":"2000","jenis":"jagung","hasil":"30"},
+            {"tahun":"2001","jenis":"jagung","hasil":"40"},
+            {"tahun":"2002","jenis":"jagung","hasil":"40"},
+            {"tahun":"2003","jenis":"jagung","hasil":"50"},
+            {"tahun":"2004","jenis":"jagung","hasil":"20"},
+            {"tahun":"2005","jenis":"jagung","hasil":"40"},
+            {"tahun":"2006","jenis":"jagung","hasil":"60"},
+            {"tahun":"2007","jenis":"jagung","hasil":"50"}
+        ];
+
+        var currentSortOrder = {
+            tahun: 'asc',
+            jenis: 'asc',
+            hasil: 'asc'
+        };
+
+        // Fungsi untuk menampilkan data
+        function showAllData(data) {
+            var output = "<table border='1' align='center'><thead><tr>";
+            output += "<th onclick='sortData(\"tahun\")'>Tahun <span class='sort-icon " + (currentSortOrder.tahun === 'asc' ? 'asc' : 'desc') + "'></span></th>";
+            output += "<th onclick='sortData(\"jenis\")'>Jenis <span class='sort-icon " + (currentSortOrder.jenis === 'asc' ? 'asc' : 'desc') + "'></span></th>";
+            output += "<th onclick='sortData(\"hasil\")'>Hasil <span class='sort-icon " + (currentSortOrder.hasil === 'asc' ? 'asc' : 'desc') + "'></span></th>";
+            output += "</tr></thead><tbody>";
+            
+            data.forEach(function(item) {
+                output += "<tr><td>" + item.tahun + "</td><td>" + item.jenis + "</td><td>" + item.hasil + "</td></tr>";
+            });
+            output += "</tbody></table>";
+            document.getElementById("dataTable").innerHTML = output;
+        }
+
+        // Fungsi untuk sorting data berdasarkan kolom
+        function sortData(column) {
+            var sortOrder = currentSortOrder[column] === 'asc' ? 'desc' : 'asc';
+            currentSortOrder[column] = sortOrder;
+
+            var sortedData = [...dataPanen].sort((a, b) => {
+                if (sortOrder === 'asc') {
+                    return a[column] > b[column] ? 1 : -1;
+                } else {
+                    return a[column] < b[column] ? 1 : -1;
+                }
+            });
+
+            showAllData(sortedData);
+        }
+
+        // Fungsi untuk mengisi dropdown filter
+        function populateFilters() {
+            var tahunSet = new Set();
+            var jenisSet = new Set();
+            var hasilSet = new Set();
+
+            dataPanen.forEach(function(item) {
+                tahunSet.add(item.tahun);
+                jenisSet.add(item.jenis);
+                hasilSet.add(item.hasil);
+            });
+
+            var filterTahun = document.getElementById("filterTahun");
+            var filterJenis = document.getElementById("filterJenis");
+            var filterHasil = document.getElementById("filterHasil");
+
+            tahunSet.forEach(function(tahun) {
+                var option = document.createElement("option");
+                option.value = tahun;
+                option.text = tahun;
+                filterTahun.appendChild(option);
+            });
+
+            jenisSet.forEach(function(jenis) {
+                var option = document.createElement("option");
+                option.value = jenis;
+                option.text = jenis;
+                filterJenis.appendChild(option);
+            });
+
+            hasilSet.forEach(function(hasil) {
+                var option = document.createElement("option");
+                option.value = hasil;
+                option.text = hasil;
+                filterHasil.appendChild(option);
+            });
+        }
+
+        populateFilters();
+
+        // Fungsi untuk memfilter data
+        function filterData() {
+            var selectedTahun = document.getElementById("filterTahun").value;
+            var selectedJenis = document.getElementById("filterJenis").value;
+            var selectedHasil = document.getElementById("filterHasil").value;
+
+            var filteredData = dataPanen.filter(function(item) {
+                var matchTahun = selectedTahun === "all" || item.tahun === selectedTahun;
+                var matchJenis = selectedJenis === "all" || item.jenis === selectedJenis;
+                var matchHasil = selectedHasil === "all" || item.hasil === selectedHasil;
+
+                return matchTahun && matchJenis && matchHasil;
+            });
+
+            showAllData(filteredData);
+        }
+
+        // Fungsi untuk mengupdate tampilan tabel berdasarkan pilihan kolom
+        function updateTableView() {
+            var viewOption = document.getElementById("viewOption").value;
+            var filteredData = dataPanen;
+
+            // Menyembunyikan kolom yang tidak dipilih
+            var output = "<table border='1' align='center'><thead><tr>";
+            if (viewOption === "tahun" || viewOption === "all") {
+                output += "<th onclick='sortData(\"tahun\")'>Tahun</th>";
+            }
+            if (viewOption === "jenis" || viewOption === "all") {
+                output += "<th onclick='sortData(\"jenis\")'>Jenis</th>";
+            }
+            if (viewOption === "hasil" || viewOption === "all") {
+                output += "<th onclick='sortData(\"hasil\")'>Hasil</th>";
+            }
+            output += "</tr></thead><tbody>";
+
+            filteredData.forEach(function(item) {
+                output += "<tr>";
+                if (viewOption === "tahun" || viewOption === "all") {
+                    output += "<td>" + item.tahun + "</td>";
+                }
+                if (viewOption === "jenis" || viewOption === "all") {
+                    output += "<td>" + item.jenis + "</td>";
+                }
+                if (viewOption === "hasil" || viewOption === "all") {
+                    output += "<td>" + item.hasil + "</td>";
+                }
+                output += "</tr>";
+            });
+            output += "</tbody></table>";
+            document.getElementById("dataTable").innerHTML = output;
+        }
+
+        // Fungsi untuk membuat chart
+        function createChart() {
+            var ctx = document.getElementById('panenChart').getContext('2d');
+
+            var uniqueTahun = [...new Set(dataPanen.map(item => item.tahun))];
+
+            var hasilPadi = uniqueTahun.map(tahun => {
+                var panenPadi = dataPanen.find(item => item.tahun === tahun && item.jenis === "padi");
+                return panenPadi ? panenPadi.hasil : 0;
+            });
+
+            var hasilJagung = uniqueTahun.map(tahun => {
+                var panenJagung = dataPanen.find(item => item.tahun === tahun && item.jenis === "jagung");
+                return panenJagung ? panenJagung.hasil : 0;
+            });
+
+            var panenChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: uniqueTahun,
+                    datasets: [
+                        {
+                            label: 'Padi',
+                            data: hasilPadi,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Jagung',
+                            data: hasilJagung,
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Panggil fungsi chart dan tampilkan data setelah halaman dimuat
+        window.onload = function() {
+            showAllData(dataPanen);
+            createChart();
+        };
+    </script>
+</body>
+</html>
